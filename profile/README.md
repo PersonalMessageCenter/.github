@@ -10,16 +10,8 @@ Um centro de controle de mensagens com capacidades de armazenar metadados sobre 
 - Processamento de comandos básicos (/help, /status, /info)
 - Infraestrutura Docker Compose
 - Comunicação bidirecional via filas
-
-### 🚧 Em Desenvolvimento
-- Integração real com WhatsApp (atualmente em simulação)
-- Conexão com whatsmeow para comunicação real
-- Envio efetivo de mensagens via WhatsApp
-
-### 📋 Planejado
-- Integração com APIs externas (n8n, etc)
-- Mais comandos e funcionalidades
-- Monitoramento e métricas
+- Testes unitários (Java, Go, Node.js)
+- Maven Wrapper para execução de testes Java
 
 ## V0
 
@@ -29,7 +21,7 @@ Inicialmente, foi testado um MVP para apenas salvar em um banco de dados:
 flowchart TD
     %% participants 
     wpp@{ shape: bow-rect, label: "wpp-socket" }
-    c["wppdataretriever"]
+    c["wpp-retriever"]
     db@{shape: cyl, label: "database<br>(postgres)"}
 
     %% step 1 - communication between communicator and socket
@@ -39,6 +31,8 @@ flowchart TD
     c --> |publish| db
 ```
 
+**Repositório**: [wpp-retriever](https://github.com/PersonalMessageCenter/wpp-retriever)
+
 Esta versão rodou por aproximadamente **3 meses** em um **homelab** como prova de conceito. Durante esse período, coletou dados de mensagens que foram exportados em CSV. Embora seja difícil extrair métricas precisas de throughput dos dados históricos (logs podem não estar disponíveis), a experiência prática revelou limitações importantes que motivaram a arquitetura V1.
 
 ## Problemas Identificados na V0
@@ -47,9 +41,11 @@ Esta versão rodou por aproximadamente **3 meses** em um **homelab** como prova 
 - [ ] Necessidade de processamento assíncrono para melhor escalabilidade
 - [ ] Separação de responsabilidades entre persistência e processamento de comandos
 
+**Nota:** Para testes de carga futuros, o projeto **[chaos-socket](https://github.com/PersonalMessageCenter/chaos-socket)** está pronto e disponível para simular carga de mensagens.
+
 ## V1
 
-Com base nos problemas identificados, foi construída esta versão com arquitetura baseada em mensageria assíncrona.
+Esta versão foi construída com arquitetura baseada em mensageria assíncrona.
 
 ### Componentes
 
@@ -57,6 +53,7 @@ Com base nos problemas identificados, foi construída esta versão com arquitetu
 - **[wpp-communicator](https://github.com/PersonalMessageCenter/wpp-communicator)**: Serviço Go responsável por comunicar com WhatsApp (via whatsmeow - em desenvolvimento)
 - **[wpp-data-processor](https://github.com/PersonalMessageCenter/wpp-data-processor)**: Serviço Go responsável por persistir os metadados no banco de dados
 - **[wpp-command-processor](https://github.com/PersonalMessageCenter/wpp-command-processor)**: Serviço Java/Spring Boot responsável por executar comandos
+- **[wpp-retriever](https://github.com/PersonalMessageCenter/wpp-retriever)**: Serviço Go da arquitetura V0 (persistência direta) - usado para comparação de desempenho
 
 ### Arquitetura
 
@@ -167,13 +164,15 @@ CREATE TABLE message_metadata (
 
 ## Próximos Passos
 
-### Principais
-- [ ] **Testes de carga e validação de throughput** - Validar capacidade do sistema e identificar gargalos
-- [ ] Implementar integração real com whatsmeow no `wpp-communicator`
-- [ ] Implementar envio efetivo de mensagens via WhatsApp
+### Curto Prazo
+- [ ] **Testes integrados com Gherkin/Cucumber** - Validar fluxos end-to-end do sistema
+- [ ] **Testes de carga e validação de throughput** - Validar capacidade do sistema e identificar gargalos (usando `chaos-socket`)
+- [ ] **Integração real com WhatsApp** - Implementar whatsmeow no `wpp-communicator` para comunicação real
 
-### Secundários
-- [ ] Disponibilizar dados coletados da V0 (CSV) de forma pública/anônima
+### Médio Prazo
 - [ ] Adicionar mais comandos e funcionalidades
 - [ ] Integração com APIs externas (n8n, etc)
 - [ ] Monitoramento e métricas
+
+### Longo Prazo
+- [ ] Disponibilizar dados coletados da V0 (CSV) de forma pública/anônima
